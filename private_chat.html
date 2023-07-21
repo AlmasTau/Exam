@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="private_chat.css" rel="stylesheet" type="text/css">
+  <title>Личный чат</title>
+</head>
+<body>
+  <h1>Личный чат</h1>
+  
+  <h2>Список пользователей</h2>
+  <select id="recipient-select">
+
+</select>
+  
+  <h2>Личные сообщения</h2>
+  <ul id="private-messages"></ul>
+
+  <h2>Отправить личное сообщение</h2>
+  <input id="private-message-input" autocomplete="off" required />
+  <button id="private-message-send-btn">Отправить</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    function fillRecipientList(users) {
+      const recipientSelect = document.getElementById('recipient-select');
+      users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user.username;
+        option.textContent = user.username;
+        recipientSelect.appendChild(option);
+      });
+    }
+
+    document.getElementById('private-message-send-btn').addEventListener('click', () => {
+      const to = document.getElementById('recipient-select').value;
+      const content = document.getElementById('private-message-input').value;
+      socket.emit('privateMessage', { from: loginUsername, to, content });
+      document.getElementById('private-message-input').value = '';
+    });
+
+    socket.on('privateMessage', (data) => {
+      const { from, content } = data;
+      const privateMessages = document.getElementById('private-messages');
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>Личное сообщение от ${from}:</strong> ${content}`;
+      privateMessages.appendChild(li);
+    });
+
+    socket.on('privateMessageError', (data) => {
+      const { message } = data;
+      alert(message);
+    });
+
+    fetch('/users')
+      .then(response => response.json())
+      .then(data => fillRecipientList(data.users))
+      .catch(err => console.error('Ошибка при получении списка пользователей:', err));
+  </script>
+  <script src='server.js'></script>
+
+</body>
+</html>

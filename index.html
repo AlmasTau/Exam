@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat App</title>
+  <style>
+    #messages { list-style-type: none; margin: 0; padding: 0; }
+    #messages li { padding: 5px 10px; }
+    .message-row { display: flex; align-items: center; margin-bottom: 10px; }
+    .message-username { font-weight: bold; margin-right: 5px; }
+    .message-content { background-color: #f0f0f0; padding: 5px 10px; border-radius: 5px; }  </style>
+</head>
+<body>
+  <h2>Register</h2>
+  <form id="register-form">
+    <input id="register-username" placeholder="Username" autocomplete="off" required />
+    <input id="register-password" type="password" placeholder="Password" autocomplete="off" required />
+    <button>Register</button>
+  </form>  
+  <h2>Login</h2>
+  <form id="login-form">
+    <input id="login-username" placeholder="Username" autocomplete="off" required />
+    <input id="login-password" type="password" placeholder="Password" autocomplete="off" required />
+    <button>Login</button>
+  </form>
+
+  <h2>Chat</h2>
+  <ul id="messages"></ul>
+  <form id="chat-form">
+    <input id="message-input" autocomplete="off" required />
+    <button>Send</button>
+  </form>
+  <h2>Private Chat</h2>
+  <select id="recipient-select">
+    <!-- Выводим список пользователей для выбора получателя личного сообщения -->
+    <!-- Пользователь добавленный через регистрацию будет появляться в этом списке -->
+  </select>
+  <input id="private-message-input" autocomplete="off" required />
+  <button id="private-message-send-btn">Send Private Message</button>
+
+  <h2>Chat</h2>
+  <ul id="messages"></ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+
+    const recipientSelect = document.getElementById('recipient-select');
+    const privateMessageInput = document.getElementById('private-message-input');
+    const privateMessageSendBtn = document.getElementById('private-message-send-btn');
+    const messages = document.getElementById('messages');
+
+    privateMessageSendBtn.addEventListener('click', () => {
+      const to = recipientSelect.value;
+      const content = privateMessageInput.value;
+      socket.emit('privateMessage', { from: loginUsernameInput.value, to, content });
+      privateMessageInput.value = '';
+    });
+
+    socket.on('privateMessage', (data) => {
+      const { from, content } = data;
+      const li = document.createElement('li');
+      li.innerHTML = `<strong>Private message from ${from}:</strong> ${content}`;
+      messages.appendChild(li);
+    });
+
+    socket.on('privateMessageError', (data) => {
+      const { message } = data;
+      alert(message);
+    });
+
+    socket.on('chatMessage', (data) => {
+      const { username, content, type } = data;
+      const li = document.createElement('li');
+      
+      if (type === 'private') {
+        li.innerHTML = `<strong>Private message from ${username}:</strong> ${content}`;
+      } else {
+        li.innerHTML = `<strong>${username}:</strong> ${content}`;
+      }
+
+      messages.appendChild(li);
+    });
+  </script>
+</body>
+</html>
